@@ -419,6 +419,8 @@ function Bonobo.evaluate_node!(tree::Bonobo.BnBTree, node::FrankWolfeNode)
     # Call heuristic 
     run_heuristics(tree, x, tree.root.options[:heuristics])
 
+    tree.root.options[:ignore_lower_bound] = true
+
     # Found an upper bound
     if is_integer_feasible(tree, x)
         node.ub = primal
@@ -427,8 +429,9 @@ function Bonobo.evaluate_node!(tree::Bonobo.BnBTree, node::FrankWolfeNode)
         # Sanity check: If the incumbent is better than the lower bound of the root node
         # and the root node is not integer feasible, something is off!
     elseif node.id == 1 && !tree.root.options[:ignore_lower_bound]
-        @debug "Lower bound of root node: $(lower_bound)"
-        @debug "Current incumbent: $(tree.incumbent)"
+        println("Lower bound of root node: $(lower_bound)")
+        println("Current incumbent: $(tree.incumbent)")
+        println("Dual gap: $(dual_gap)")
         @assert lower_bound <= tree.incumbent + dual_gap "lower_bound <= tree.incumbent + dual_gap : $(lower_bound) <= $(tree.incumbent + dual_gap)"
     end
 

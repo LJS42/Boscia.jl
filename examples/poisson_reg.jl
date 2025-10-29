@@ -12,7 +12,7 @@ using StableRNGs
 
 println("\nPoisson Sparse Regression Example")
 
-seed = rand(UInt64)
+seed = 0xa845e15a23356183
 @show seed
 rng = StableRNG(seed)
 
@@ -50,6 +50,11 @@ const ys = map(1:n) do idx
     return rand(rng, Distributions.Poisson(exp(a)))
 end
 Ns = 0.10
+
+println("ws: $(ws)")
+println("bs: $(bs)")
+println("Xs: $(Xs)")
+println("ys: $(ys)")
 
 # TODO: document better
 
