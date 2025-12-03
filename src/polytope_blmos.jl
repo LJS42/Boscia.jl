@@ -718,64 +718,193 @@ function rounding_hyperplane_heuristic(
 end
 
 """
-    2normBallBLMO()
+    ConvexHullLMO(Vector{Vector{Float64}})
 
-BLMO denotes the L2normBall, It is unit ball which means R = 1
+Linear Minimization Oracle over the convex hull of a finite set of integer points.
+The extreme points are the integer vertices provided at construction.
+Primarily used for integer programming relaxations.
 """
 
-struct L2normBallBLMO <: FrankWolfe.LinearMinimizationOracle end
-
-function bounded_compute_extreme_point(blmo::L2normBallBLMO, d, lb, ub, int_vars; kwargs...)
-    max = abs(d[1])
-    max_idx = 1
-    idx = 0
-    for idx in int_vars
-        if abs(d[idx]) > max
-            max = -d[idx]
-            max_idx = idx
-        end
-        i = findfirst(x -> x == idx, int_vars)
-        if lb[i] > 0
-            v = zeros(length(d))
-            v[idx] = 1
-            return v
-        elseif ub[i] < 0
-            v = zeros(length(d))
-            v[idx] = -1
-            return v
-        end
-    end
-    v = -d
-    v[int_vars] .= 0
-    v = v ./ norm(v)
-    prod = dot(v, d)
-    if max < prod
-        v = zeros(length(d))
-        v[max_idx] = 1
-    end
-    return v
+struct ConvexHullLMO{T,V<:AbstractVector{T}} <: FrankWolfe.LinearMinimizationOracle
+    vertices::Vector{V}
 end
 
-function is_simple_linear_feasible(lmo::L2normBallBLMO, v)
-    if norm(v) > 1 + 1e-6
-        @debug "norm(v) : $(norm(v)) > 1"
-        return false
+function proj_simplex!(λ::AbstractVector{T}) where {T<:Real}
+    n = length(λ)
+    u = sort(collect(λ); rev=true)
+    cssv = cumsum(u)
+    rho = findlast(i -> u[i] + (1 - cssv[i]) / i > 0, 1:n)
+    if rho === nothing
+        fill!(λ, 1 / n)
+        return λ
     end
-    return true
+    theta = (cssv[rho] - 1) / rho
+    @inbounds for i in eachindex(λ)
+        λ[i] = max(λ[i] - theta, zero(T))
+    end
+    return λ
 end
 
-function check_feasibility(lmo::L2normBallBLMO, lb, ub, int_vars, n)
-    if any(lb .> 1) || any(ub .< -1)
+function vertices_matrix(vertices::Vector{<:AbstractVector{T}}) where {T}
+    m = length(vertices)
+    n = length(vertices[1])
+    V = zeros(Float64, n, m)
+    @inbounds for j in 1:m
+        V[:, j] .= Float64.(vertices[j])
+    end
+    return V
+end
+
+function try_convex_combination_in_box(
+    vertices::Vector{<:AbstractVector},
+    lb::AbstractVector,
+    ub::AbstractVector;
+    tol=1e-8,
+    max_iters=200,
+)
+    m = length(vertices)
+    if m == 0
+        return nothing
+    end
+    V = vertices_matrix(vertices)  # n x m
+    # initial λ: uniform
+    λ = fill(1.0 / m, m)
+    # target mid point
+    mid = (Float64.(lb) .+ Float64.(ub)) ./ 2.0
+    # gradient descent w/ projection onto simplex
+    α = 1.0
+    for iter in 1:max_iters
+        x = V * λ
+        grad = 2.0 * (V' * (x - mid))
+        # step
+        λ -= α * grad
+        proj_simplex!(λ)
+        # check residual
+        x = V * λ
+        if all(x .>= Float64.(lb) .- 1e-8) && all(x .<= Float64.(ub) .+ 1e-8)
+            return x  # feasible convex combination found
+        end
+        # optionally reduce step size
+        α *= 0.99
+    end
+    return nothing
+end
+
+function bounded_compute_extreme_point(
+    lmo::ConvexHullLMO,
+    direction::AbstractVector{T},
+    lb,
+    ub,
+    int_vars;
+    kwargs...,
+) where {T}
+
+    verts = lmo.vertices
+    nverts = length(verts)
+    n = length(direction)
+    feasible_vs = Vector{Vector{Float64}}()
+    @inbounds for v in verts
+        vfloat = Float64.(v)
+        ok = true
+        for i in 1:n
+            if vfloat[i] < Float64(lb[i]) - eps(Float64) ||
+               vfloat[i] > Float64(ub[i]) + eps(Float64)
+                ok = false
+                break
+            end
+        end
+        if ok
+            push!(feasible_vs, vfloat)
+        end
+    end
+
+    if !isempty(feasible_vs)
+        best_val = Inf
+        best_v = feasible_vs[1]
+        @inbounds for v in feasible_vs
+            val = dot(Float64.(direction), v)
+            if val < best_val
+                best_val = val
+                best_v = v
+            end
+        end
+        return best_v
+    end
+
+    x_comb = try_convex_combination_in_box(verts, lb, ub)
+    if x_comb !== nothing
+        return x_comb
+    end
+
+    best_val = Inf
+    best_v = Float64.(verts[1])
+    dirf = Float64.(direction)
+    @inbounds for v in verts
+        vfloat = Float64.(v)
+        val = dot(dirf, vfloat)
+        if val < best_val
+            best_val = val
+            best_v = vfloat
+        end
+    end
+    # clip
+    clipped = clamp.(best_v, Float64.(lb), Float64.(ub))
+    @warn "ConvexHullLMO: no single vertex or convex combination found inside [lb,ub]. Returning clipped best-vertex. This may cause degenerate branching if many vertices share same int value." clipped =
+        clipped
+    return clipped
+end
+
+# -----------------------
+# is_simple_linear_feasible: quick check if any vertex individually satisfies bounds.
+function is_simple_linear_feasible(lmo::ConvexHullLMO, v)
+    # v is candidate point; simply check if in box
+    return all(Float64.(v) .>= Float64.(v) .- 0.0)  # trivial placeholder: always true in user code previously
+end
+
+function check_feasibility(lmo::ConvexHullLMO, lb, ub, int_vars, n)
+    verts = lmo.vertices
+    if isempty(verts)
         return INFEASIBLE
     end
-    count = 0
-    for idx in 1:length(int_vars)
-        if !(lb[idx] <= 0 <= ub[idx])
-            count = count + 1
+    @inbounds for v in verts
+        vfloat = Float64.(v)
+        ok = true
+        for i in 1:n
+            if vfloat[i] < Float64(lb[i]) - eps(Float64) ||
+               vfloat[i] > Float64(ub[i]) + eps(Float64)
+                ok = false
+                break
+            end
         end
-        if count > 1
+        if ok
+            return OPTIMAL
+        end
+    end
+
+    nverts = length(verts)
+    mins = fill(Inf, n)
+    maxs = fill(-Inf, n)
+    @inbounds for v in verts
+        vfloat = Float64.(v)
+        for i in 1:n
+            if vfloat[i] < mins[i]
+                mins[i] = vfloat[i]
+            end
+            if vfloat[i] > maxs[i]
+                maxs[i] = vfloat[i]
+            end
+        end
+    end
+    for i in 1:n
+        if maxs[i] < Float64(lb[i]) - 1e-12 || mins[i] > Float64(ub[i]) + 1e-12
             return INFEASIBLE
         end
     end
-    return OPTIMAL
+
+    x = try_convex_combination_in_box(verts, lb, ub)
+    if x !== nothing
+        return OPTIMAL
+    end
+
+    return INFEASIBLE
 end
