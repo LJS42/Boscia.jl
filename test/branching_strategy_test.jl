@@ -1,5 +1,4 @@
 using Boscia
-using Bonobo
 using FrankWolfe
 using Test
 using Random

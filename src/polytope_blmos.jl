@@ -293,12 +293,12 @@ function check_feasibility(lmo::ProbabilitySimplexLMO, lb, ub, int_vars, n)
 end
 
 """
-     rounding_hyperplane_heuristic(tree::Bonobo.BnBTree, tlmo::TimeTrackingLMO{ManagedBoundedLMO{ProbabilitySimplexLMO}}, x) 
+     rounding_hyperplane_heuristic(tree::BnBTree, tlmo::TimeTrackingLMO{ManagedBoundedLMO{ProbabilitySimplexLMO}}, x) 
 
 Hyperplane-aware rounding for the probability simplex.
 """
 function rounding_hyperplane_heuristic(
-    tree::Bonobo.BnBTree,
+    tree::BnBTree,
     tlmo::TimeTrackingLMO{ManagedBoundedLMO{ProbabilitySimplexLMO}},
     x,
 )
@@ -551,12 +551,12 @@ function check_feasibility(lmo::UnitSimplexLMO, lb, ub, int_vars, n)
 end
 
 """
-    rounding_hyperplane_heuristic(tree::Bonobo.BnBTree, tlmo::TimeTrackingLMO{ManagedBoundedLMO{UnitSimplexLMO}}, x) 
+    rounding_hyperplane_heuristic(tree::BnBTree, tlmo::TimeTrackingLMO{ManagedBoundedLMO{UnitSimplexLMO}}, x) 
     
 Hyperplane-aware rounding for the unit simplex.
 """
 function rounding_hyperplane_heuristic(
-    tree::Bonobo.BnBTree,
+    tree::BnBTree,
     tlmo::TimeTrackingLMO{ManagedBoundedLMO{UnitSimplexLMO}},
     x,
 )
@@ -689,7 +689,7 @@ end
 Hyperplane-aware rounding for the reverse knapsack constraint.
 """
 function rounding_hyperplane_heuristic(
-    tree::Bonobo.BnBTree,
+    tree::BnBTree,
     tlmo::TimeTrackingLMO{ManagedBoundedLMO{ReverseKnapsackLMO}},
     x,
 )

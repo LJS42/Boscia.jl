@@ -34,7 +34,7 @@ end
 """
 Check if at a given index we have an integer constraint respectivily.
 """
-function has_integer_constraint(tree::Bonobo.BnBTree, idx::Int)
+function has_integer_constraint(tree::BnBTree, idx::Int)
     return has_integer_constraint(tree.root.problem.tlmo.lmo, idx)
 end
 
@@ -42,7 +42,7 @@ end
 """
 Check wether a split is valid. 
 """
-function is_valid_split(tree::Bonobo.BnBTree, vidx::Int)
+function is_valid_split(tree::BnBTree, vidx::Int)
     return is_valid_split(tree, tree.root.problem.tlmo.lmo, vidx)
 end
 
@@ -336,7 +336,7 @@ end
 Checks if the branch and bound can be stopped.
 By default (in Bonobo) stops then the priority queue is empty. 
 """
-function Bonobo.terminated(tree::Bonobo.BnBTree{<:FrankWolfeNode})
+function terminated(tree::BnBTree{<:FrankWolfeNode})
     if tree.root.problem.solving_stage in (TIME_LIMIT_REACHED, NODE_LIMIT_REACHED, USER_STOP)
         return true
     end
@@ -430,10 +430,10 @@ end
 
 
 # utility function to print the values of the parameters
-_value_to_print(::Bonobo.BestFirstSearch) = "Move best bound"
+_value_to_print(::BestFirstSearch) = "Move best bound"
 _value_to_print(::PartialStrongBranching) = "Partial strong branching"
 _value_to_print(::HybridStrongBranching) = "Hybrid strong branching"
-_value_to_print(::Bonobo.MOST_INFEASIBLE) = "Most infeasible"
+_value_to_print(::MOST_INFEASIBLE) = "Most infeasible"
 _value_to_print(::PseudocostBranching) = "Pseudocost"
 _value_to_print(::Hierarchy) = "Hierarchy Branching"
 _value_to_print(::LargestGradient) = "Largest Gradient"

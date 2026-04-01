@@ -6,7 +6,6 @@ using Boscia
 import MathOptInterface
 const MOI = MathOptInterface
 using Test
-using Bonobo
 using FrankWolfe
 using StableRNGs
 

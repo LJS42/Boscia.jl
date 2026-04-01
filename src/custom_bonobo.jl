@@ -26,26 +26,26 @@ which are set in the following ways:
 1. If the node is infeasible the kwarg `node_infeasible` is set to `true`.
 2. If the node has a higher lower bound than the incumbent the kwarg `worse_than_incumbent` is set to `true`.
 """
-function Bonobo.optimize!(
-    tree::Bonobo.BnBTree{<:FrankWolfeNode};
+function optimize!(
+    tree::BnBTree{<:FrankWolfeNode};
     callback=(args...; kwargs...) -> (),
 )
 
-    while !Bonobo.terminated(tree)
-        node = Bonobo.get_next_node(tree, tree.options.traverse_strategy)
-        lb, ub = Bonobo.evaluate_node!(tree, node)
+    while !terminated(tree)
+        node = get_next_node(tree, tree.options.traverse_strategy)
+        lb, ub = evaluate_node!(tree, node)
         # if the problem was infeasible we simply close the node and continue
         if isnan(lb) && isnan(ub)
-            Bonobo.close_node!(tree, node)
+            close_node!(tree, node)
             callback(tree, node; node_infeasible=true)
             continue
         end
 
-        Bonobo.set_node_bound!(tree.sense, node, lb, ub)
+        set_node_bound!(tree.sense, node, lb, ub)
 
         # if the evaluated lower bound is worse than the best incumbent -> close and continue
         if !tree.root.options[:no_pruning] && node.lb >= tree.incumbent
-            Bonobo.close_node!(tree, node)
+            close_node!(tree, node)
             callback(
                 tree,
                 node;
@@ -85,21 +85,21 @@ function Bonobo.optimize!(
         tree.lb = minimum([prio[2][1] for prio in tree.node_queue])
         @assert p_lb <= tree.lb
 
-        updated = Bonobo.update_best_solution!(tree, node)
+        updated = update_best_solution!(tree, node)
         if updated
-            Bonobo.bound!(tree, node.id)
+            bound!(tree, node.id)
             if isapprox(tree.incumbent, tree.lb; atol=tree.options.atol, rtol=tree.options.rtol)
                 break
             end
         end
 
-        Bonobo.close_node!(tree, node)
-        Bonobo.branch!(tree, node)
+        close_node!(tree, node)
+        branch!(tree, node)
         callback(tree, node)
     end
     # To make sure that we collect the statistics in case the time limit is reached.
     if !haskey(tree.root.result, :global_tightenings)
-        y = Bonobo.get_solution(tree)
+        y = get_solution(tree)
         vertex_storage = FrankWolfe.DeletedVertexStorage(typeof(y)[], 1)
         dummy_node = FrankWolfeNode(
             NodeInfo(-1, Inf, Inf, 0),
@@ -116,12 +116,12 @@ function Bonobo.optimize!(
         )
         callback(tree, dummy_node, node_infeasible=true)
     end
-    return Bonobo.sort_solutions!(tree.solutions)
+    return sort_solutions!(tree.solutions)
 end
 
-function Bonobo.update_best_solution!(
-    tree::Bonobo.BnBTree{<:FrankWolfeNode},
-    node::Bonobo.AbstractNode,
+function update_best_solution!(
+    tree::BnBTree{<:FrankWolfeNode},
+    node::AbstractNode,
 )
     isinf(node.ub) && return false
 
@@ -129,20 +129,20 @@ function Bonobo.update_best_solution!(
         node.ub >= tree.incumbent && return false
     end
 
-    Bonobo.add_new_solution!(tree, node)
+    add_new_solution!(tree, node)
     return true
 end
 
-function Bonobo.add_new_solution!(
-    tree::Bonobo.BnBTree{N,R,V,S},
-    node::Bonobo.AbstractNode,
+function add_new_solution!(
+    tree::BnBTree{N,R,V,S},
+    node::AbstractNode,
 ) where {N,R,V,S<:FrankWolfeSolution{N,V}}
-    return add_new_solution!(tree, node, node.ub, Bonobo.get_relaxed_values(tree, node), :iterate)
+    return add_new_solution!(tree, node, node.ub, get_relaxed_values(tree, node), :iterate)
 end
 
 function add_new_solution!(
-    tree::Bonobo.BnBTree{N,R,V,S},
-    node::Bonobo.AbstractNode,
+    tree::BnBTree{N,R,V,S},
+    node::AbstractNode,
     objective::T,
     solution::V,
     origin::Symbol,
@@ -165,8 +165,8 @@ function add_new_solution!(
     end
 end
 
-function Bonobo.get_solution(
-    tree::Bonobo.BnBTree{N,R,V,S};
+function get_solution(
+    tree::BnBTree{N,R,V,S};
     result=1,
 ) where {N,R,V,S<:FrankWolfeSolution{N,V}}
     if isempty(tree.solutions)

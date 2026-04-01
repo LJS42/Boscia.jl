@@ -1,5 +1,5 @@
-mutable struct FrankWolfeSolution{Node<:Bonobo.AbstractNode,Value,T<:Real} <:
-               Bonobo.AbstractSolution{Node,Value}
+mutable struct FrankWolfeSolution{Node<:AbstractNode,Value,T<:Real} <:
+               AbstractSolution{Node,Value}
     objective::T
     solution::Value
     node::Node
@@ -13,7 +13,7 @@ end
 Holds the necessary information of every node.
 This needs to be added by every `AbstractNode` as `std::NodeInfo`
 
-This variant is more flexibel than Bonobo.BnBNodeInfo.
+This variant is more flexibel than BnBNodeInfo.
 """
 mutable struct NodeInfo{T<:Real}
     id::Int
@@ -22,14 +22,14 @@ mutable struct NodeInfo{T<:Real}
     depth::Int
 end
 
-function Base.convert(::Type{NodeInfo{T}}, std::Bonobo.BnBNodeInfo) where {T<:Real}
+function Base.convert(::Type{NodeInfo{T}}, std::BnBNodeInfo) where {T<:Real}
     return NodeInfo(std.id, T(std.lb), T(std.ub), std.depth)
 end
 
 """
-    AbtractFrankWolfeNode <: Bonobo.AbstractNode 
+    AbtractFrankWolfeNode <: AbstractNode 
 """
-abstract type AbstractFrankWolfeNode <: Bonobo.AbstractNode end
+abstract type AbstractFrankWolfeNode <: AbstractNode end
 
 """
     FrankWolfeNode <: AbstractFrankWolfeNode
@@ -117,7 +117,7 @@ FrankWolfeNode(
 Create the information of the new branching nodes 
 based on their parent and the index of the branching variable
 """
-function Bonobo.get_branching_nodes_info(tree::Bonobo.BnBTree, node::FrankWolfeNode, vidx::Int)
+function get_branching_nodes_info(tree::BnBTree, node::FrankWolfeNode, vidx::Int)
     if !is_valid_split(tree, vidx)
         error("Splitting on the same index as parent! Abort!")
     end
@@ -126,7 +126,7 @@ function Bonobo.get_branching_nodes_info(tree::Bonobo.BnBTree, node::FrankWolfeN
     node.discarded_set_size = length(node.discarded_vertices.storage)
 
     # get iterate, primal and lower bound
-    x = Bonobo.get_relaxed_values(tree, node)
+    x = get_relaxed_values(tree, node)
     primal = tree.root.problem.f(x)
     lower_bound_base = primal - node.dual_gap
     @assert isfinite(lower_bound_base)
@@ -298,7 +298,7 @@ end
 """
 Computes the relaxation at that node
 """
-function Bonobo.evaluate_node!(tree::Bonobo.BnBTree, node::FrankWolfeNode)
+function evaluate_node!(tree::BnBTree, node::FrankWolfeNode)
     # check that local bounds and global tightening don't conflict
     for (j, ub) in tree.root.global_tightenings.upper_bounds
         if !haskey(node.local_bounds.lower_bounds, j)
@@ -442,8 +442,8 @@ end
 """
 Returns the solution vector of the relaxed problem at the node
 """
-function Bonobo.get_relaxed_values(tree::Bonobo.BnBTree, node::FrankWolfeNode)
+function get_relaxed_values(tree::BnBTree, node::FrankWolfeNode)
     return copy(FrankWolfe.get_active_set_iterate(node.active_set))
 end
 
-tree_lb(tree::Bonobo.BnBTree) = min(tree.lb, tree.incumbent)
+tree_lb(tree::BnBTree) = min(tree.lb, tree.incumbent)
