@@ -155,12 +155,7 @@ Probability rounding for 0/1 problems.
 It decides based on the fractional value whether to ceil or floor the variable value. 
 Afterward, one call to Frank-Wolfe is performed to optimize the continuous variables.    
 """
-function probability_rounding(
-    tree::BnBTree,
-    tlmo::Boscia.TimeTrackingLMO,
-    x;
-    rng=Random.GLOBAL_RNG,
-)
+function probability_rounding(tree::BnBTree, tlmo::Boscia.TimeTrackingLMO, x; rng=Random.GLOBAL_RNG)
     # save original bounds
     node = tree.nodes[tree.root.current_node_id[]]
     original_bounds = copy(node.local_bounds)

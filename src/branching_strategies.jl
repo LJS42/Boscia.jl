@@ -60,11 +60,7 @@ struct LargestGradient <: AbstractBranchStrategy end
 )
 Get branching variable which has the largest absolute value in the gradient
 """
-function get_branching_variable(
-    tree::BnBTree,
-    branching::LargestGradient,
-    node::AbstractNode,
-)
+function get_branching_variable(tree::BnBTree, branching::LargestGradient, node::AbstractNode)
     values = get_relaxed_values(tree, node)
     nabla = get_gradient_info_for_branching(tree, values)
     # return the index with largest absolute entry in nabla among branching candidates
@@ -123,11 +119,7 @@ function Bonobo.get_branching_variable(
 ) 
 Return the branching candidate with the highest index.
 """
-function get_branching_variable(
-    tree::BnBTree,
-    branching::LargestIndex,
-    node::AbstractNode,
-)
+function get_branching_variable(tree::BnBTree, branching::LargestIndex, node::AbstractNode)
     values = get_relaxed_values(tree, node)
     best_idx = -1
     # tree.branching_indices is sorted 
@@ -153,11 +145,7 @@ struct RandomBranching <: AbstractBranchStrategy end
 """
 Randomly returns the index of a branching candidate.
 """
-function get_branching_variable(
-    tree::BnBTree,
-    branching::RandomBranching,
-    node::AbstractNode,
-)
+function get_branching_variable(tree::BnBTree, branching::RandomBranching, node::AbstractNode)
     values = get_relaxed_values(tree, node)
     # tree.branching_indices is sorted 
     branching_candidates = Int64[]
@@ -350,11 +338,7 @@ get_branching_candidates(
 \nDescription:
 \n finds all possible branching candidates at the current node
 """
-function get_branching_candidates(
-    tree::BnBTree,
-    node::FrankWolfeNode,
-    values::Vector{Float64},
-)
+function get_branching_candidates(tree::BnBTree, node::FrankWolfeNode, values::Vector{Float64})
     branching_candidates = Int[]
     for idx in tree.branching_indices
         value = values[idx]
@@ -512,8 +496,7 @@ function (gen::SelectionGenerator)(
     elseif gen.name == "largest_most_infeasible_gradient"
         nabla = get_gradient_info_for_branching(tree, values)
         scores = Float64[
-            get_distance_to_feasible(tree, values[idx]) * abs(nabla[idx]) for
-            idx in candidates
+            get_distance_to_feasible(tree, values[idx]) * abs(nabla[idx]) for idx in candidates
         ]
         cutoff = gen.cutoff_f(scores)
     elseif gen.name == "most_infeasible"
@@ -594,9 +577,8 @@ function (gen::SelectionGenerator)(
                     ]
 
                 elseif gen.alt_name == "most_infeasible"
-                    scores = Float64[
-                        get_distance_to_feasible(tree, values[idx]) for idx in candidates
-                    ]
+                    scores =
+                        Float64[get_distance_to_feasible(tree, values[idx]) for idx in candidates]
                 end
                 # Compute cutoff based on alternative criteria scores
                 cutoff = gen.alt_cutoff_f(scores)
@@ -686,11 +668,7 @@ function Bonobo.get_branching_variable(
 ) 
 Returns the best branching candidate as per the defined Hierarchy Branching strategy
 """
-function get_branching_variable(
-    tree::BnBTree,
-    branching::Hierarchy,
-    node::AbstractNode,
-)
+function get_branching_variable(tree::BnBTree, branching::Hierarchy, node::AbstractNode)
     # indices of branching candidates
     values = get_relaxed_values(tree, node)
     branching_candidates = get_branching_candidates(tree, node, values)
@@ -981,11 +959,7 @@ Description: Returns the branching candidate with the highest pseudocost branchi
 pseudocosts are stable and otherwise returns the candidate with the highest score as per
 the chosen alternative branching strategy.
 """
-function get_branching_variable(
-    tree::BnBTree,
-    branching::PseudocostBranching,
-    node::AbstractNode,
-)
+function get_branching_variable(tree::BnBTree, branching::PseudocostBranching, node::AbstractNode)
     values = get_relaxed_values(tree, node)
     #indices of branching candidates
     branching_candidates = get_branching_candidates(tree, node, values)

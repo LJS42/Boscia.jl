@@ -1,5 +1,4 @@
-mutable struct FrankWolfeSolution{Node<:AbstractNode,Value,T<:Real} <:
-               AbstractSolution{Node,Value}
+mutable struct FrankWolfeSolution{Node<:AbstractNode,Value,T<:Real} <: AbstractSolution{Node,Value}
     objective::T
     solution::Value
     node::Node

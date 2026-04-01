@@ -156,11 +156,8 @@ end
 Hybrid between partial strong branching and another strategy.
 `perform_strong_branch(tree, node) -> Bool` decides whether to perform strong branching or not.
 """
-struct HybridStrongBranching{
-    LMO<:LinearMinimizationOracle,
-    F<:Function,
-    B<:AbstractBranchStrategy,
-} <: AbstractBranchStrategy
+struct HybridStrongBranching{LMO<:LinearMinimizationOracle,F<:Function,B<:AbstractBranchStrategy} <:
+       AbstractBranchStrategy
     pstrong::PartialStrongBranching{LMO}
     perform_strong_branch::F
     alternative_branching::B
@@ -180,11 +177,7 @@ function HybridStrongBranching(
     )
 end
 
-function get_branching_variable(
-    tree::BnBTree,
-    branching::HybridStrongBranching,
-    node::AbstractNode,
-)
+function get_branching_variable(tree::BnBTree, branching::HybridStrongBranching, node::AbstractNode)
     do_strong_branch = branching.perform_strong_branch(tree, node)
     return if do_strong_branch
         get_branching_variable(tree, branching.pstrong, node)

@@ -26,10 +26,7 @@ which are set in the following ways:
 1. If the node is infeasible the kwarg `node_infeasible` is set to `true`.
 2. If the node has a higher lower bound than the incumbent the kwarg `worse_than_incumbent` is set to `true`.
 """
-function optimize!(
-    tree::BnBTree{<:FrankWolfeNode};
-    callback=(args...; kwargs...) -> (),
-)
+function optimize!(tree::BnBTree{<:FrankWolfeNode}; callback=(args...; kwargs...) -> ())
 
     while !terminated(tree)
         node = get_next_node(tree, tree.options.traverse_strategy)
@@ -119,10 +116,7 @@ function optimize!(
     return sort_solutions!(tree.solutions)
 end
 
-function update_best_solution!(
-    tree::BnBTree{<:FrankWolfeNode},
-    node::AbstractNode,
-)
+function update_best_solution!(tree::BnBTree{<:FrankWolfeNode}, node::AbstractNode)
     isinf(node.ub) && return false
 
     if !tree.root.options[:add_all_solutions]
@@ -165,10 +159,7 @@ function add_new_solution!(
     end
 end
 
-function get_solution(
-    tree::BnBTree{N,R,V,S};
-    result=1,
-) where {N,R,V,S<:FrankWolfeSolution{N,V}}
+function get_solution(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:FrankWolfeSolution{N,V}}
     if isempty(tree.solutions)
         @warn "There is no solution in the tree. This behaviour can happen if you have supplied 
         \na custom domain oracle. In that case, try to increase the time or node limit. If you have not specified a 

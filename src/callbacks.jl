@@ -367,8 +367,7 @@ function build_bnb_callback(
         end
         # update current_node_id
         if !terminated(tree)
-            tree.root.current_node_id[] =
-                get_next_node(tree, tree.options.traverse_strategy).id
+            tree.root.current_node_id[] = get_next_node(tree, tree.options.traverse_strategy).id
         end
 
         if terminated(tree)

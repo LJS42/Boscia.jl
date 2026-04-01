@@ -14,7 +14,7 @@ abstract type AbstractNode end
 The abstract type for a `Solution` object. The default is [`DefaultSolution`](@ref).
 It is parameterized by `Node` and `Value` where `Value` is the value which describes the full solution i.e the value for every variable.
 """
-abstract type AbstractSolution{Node<:AbstractNode, Value} end
+abstract type AbstractSolution{Node<:AbstractNode,Value} end
 
 """
     BnBNodeInfo
@@ -30,10 +30,10 @@ depth :: Int
 ```
 """
 mutable struct BnBNodeInfo
-    id :: Int
-    lb :: Float64
-    ub :: Float64
-    depth :: Int
+    id::Int
+    lb::Float64
+    ub::Float64
+    depth::Int
 end
 
 """
@@ -43,7 +43,7 @@ The default structure for saving node information.
 Currently this includes only the necessary `std::BnBNodeInfo` which needs to be part of every [`AbstractNode`](@ref).
 """
 mutable struct DefaultNode <: AbstractNode
-    std :: BnBNodeInfo
+    std::BnBNodeInfo
 end
 
 """
@@ -60,10 +60,10 @@ Both the `Value` and the `Node` type are determined by the [`initialize`](@ref) 
 
 `solution` holds the information to obtain the solution for example the values of all variables.
 """
-mutable struct DefaultSolution{Node<:AbstractNode,Value} <: AbstractSolution{Node, Value}
-    objective :: Float64
-    solution  :: Value
-    node      :: Node
+mutable struct DefaultSolution{Node<:AbstractNode,Value} <: AbstractSolution{Node,Value}
+    objective::Float64
+    solution::Value
+    node::Node
 end
 
 """
@@ -116,12 +116,12 @@ The `MOST_INFEASIBLE` strategy always picks the variable which is furthest away 
 struct MOST_INFEASIBLE <: AbstractBranchStrategy end
 
 mutable struct Options
-    traverse_strategy   :: AbstractTraverseStrategy
-    branch_strategy     :: AbstractBranchStrategy
-    atol                :: Float64
-    rtol                :: Float64
-    dual_gap_limit      :: Float64
-    abs_gap_limit       :: Float64
+    traverse_strategy::AbstractTraverseStrategy
+    branch_strategy::AbstractBranchStrategy
+    atol::Float64
+    rtol::Float64
+    dual_gap_limit::Float64
+    abs_gap_limit::Float64
 end
 
 """
@@ -148,8 +148,8 @@ mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{
     incumbent_solution::Union{Nothing,Solution}
     lb::Float64
     solutions::Vector{Solution}
-    node_queue::PriorityQueue{Int,Tuple{Float64, Int}}
-    nodes::Dict{Int, Node}
+    node_queue::PriorityQueue{Int,Tuple{Float64,Int}}
+    nodes::Dict{Int,Node}
     root::Root
     branching_indices::Vector{Int}
     num_nodes::Int
@@ -181,30 +181,30 @@ Later it can be dispatched on `BnBTree{Node, Root, Solution}` for various method
 Return a [`BnBTree`](@ref) object which is the input for [`optimize!`](@ref).
 """
 function initialize(;
-    traverse_strategy = BestFirstSearch(),
-    branch_strategy = FIRST(),
-    atol = 1e-6,
-    rtol = 1e-6,
-    Node = DefaultNode,
-    Value = Vector{Float64},
-    Solution = DefaultSolution{Node,Value},
-    root = nothing,
-    sense = :Min,
-    dual_gap_limit = 1e-5,
-    abs_gap_limit = 1e-5,
+    traverse_strategy=BestFirstSearch(),
+    branch_strategy=FIRST(),
+    atol=1e-6,
+    rtol=1e-6,
+    Node=DefaultNode,
+    Value=Vector{Float64},
+    Solution=DefaultSolution{Node,Value},
+    root=nothing,
+    sense=:Min,
+    dual_gap_limit=1e-5,
+    abs_gap_limit=1e-5,
 )
     return BnBTree{Node,typeof(root),Value,Solution}(
         Inf,
         nothing,
         -Inf,
         Vector{Solution}(),
-        PriorityQueue{Int,Tuple{Float64, Int}}(),
+        PriorityQueue{Int,Tuple{Float64,Int}}(),
         Dict{Int,Node}(),
         root,
         get_branching_indices(root),
         0,
         sense,
-        Options(traverse_strategy, branch_strategy, atol, rtol, dual_gap_limit, abs_gap_limit)
+        Options(traverse_strategy, branch_strategy, atol, rtol, dual_gap_limit, abs_gap_limit),
     )
 end
 
@@ -248,7 +248,7 @@ which are set in the following ways:
 1. If the node is infeasible the kwarg `node_infeasible` is set to `true`.
 2. If the node has a higher lower bound than the incumbent the kwarg `worse_than_incumbent` is set to `true`.
 """
-function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
+function optimize!(tree::BnBTree; callback=(args...; kwargs...) -> ())
     while !terminated(tree)
         node = get_next_node(tree, tree.options.traverse_strategy)
         lb, ub = evaluate_node!(tree, node)
@@ -260,7 +260,7 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         end
 
         set_node_bound!(tree.sense, node, lb, ub)
-       
+
         # if the evaluated lower bound is worse than the best incumbent -> close and continue
         if node.lb >= tree.incumbent
             close_node!(tree, node)
@@ -269,12 +269,12 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         end
 
         tree.node_queue[node.id] = (node.lb, node.id)
-        _ , prio = first(tree.node_queue)
-        if tree.lb > prio[1]+1e-6
+        _, prio = first(tree.node_queue)
+        if tree.lb > prio[1] + 1e-6
             @show tree.lb
             @show prio[1]
         end
-        @assert tree.lb <= prio[1]+1e-6
+        @assert tree.lb <= prio[1] + 1e-6
         tree.lb = prio[1]
 
         updated = update_best_solution!(tree, node)
@@ -289,7 +289,7 @@ function optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
         branch!(tree, node)
         callback(tree, node)
     end
-    sort_solutions!(tree.solutions)
+    return sort_solutions!(tree.solutions)
 end
 
 """
@@ -298,7 +298,7 @@ end
 Sort the solutions vector by objective value such that the best solution is at index 1.
 """
 function sort_solutions!(solutions::Vector{<:AbstractSolution})
-    sort!(solutions; by=s->s.objective)
+    return sort!(solutions; by=s -> s.objective)
 end
 
 """
@@ -362,7 +362,7 @@ Delete the node from the nodes dictionary and the priority queue.
 """
 function close_node!(tree::BnBTree, node::AbstractNode)
     delete!(tree.nodes, node.id)
-    delete!(tree.node_queue, node.id)
+    return delete!(tree.node_queue, node.id)
 end
 
 """
@@ -388,7 +388,10 @@ Currently it changes the general solution itself by calling [`get_relaxed_values
 
 This function needs to be implemented by you if you have a different type of Solution object than [`DefaultSolution`](@ref).
 """
-function add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
+function add_new_solution!(
+    tree::BnBTree{N,R,V,S},
+    node::AbstractNode,
+) where {N,R,V,S<:DefaultSolution{N,V}}
     sol = DefaultSolution(node.ub, get_relaxed_values(tree, node), node)
     push!(tree.solutions, sol)
     if tree.incumbent_solution === nothing || sol.objective < tree.incumbent_solution.objective
@@ -545,7 +548,7 @@ set_root!(tree, (
 ```
 """
 function set_root!(tree::BnBTree, node_info::NamedTuple)
-    add_node!(tree, nothing, node_info)
+    return add_node!(tree, nothing, node_info)
 end
 
 """
@@ -553,7 +556,11 @@ end
 
 Add a new node to the tree using the `node_info`. For information on that see [`set_root!`](@ref).
 """
-function add_node!(tree::BnBTree{Node}, parent::Union{AbstractNode, Nothing}, node_info::NamedTuple) where Node <: AbstractNode
+function add_node!(
+    tree::BnBTree{Node},
+    parent::Union{AbstractNode,Nothing},
+    node_info::NamedTuple,
+) where {Node<:AbstractNode}
     node_id = tree.num_nodes + 1
     node = create_node(Node, node_id, parent, node_info)
     # only add the node if it's better than the current best solution
@@ -570,15 +577,15 @@ end
 Creates a node of type `Node` with id `node_id` and the named tuple `node_info`. 
 For information on that see [`set_root!`](@ref).
 """
-function create_node(Node, node_id::Int, parent::Union{AbstractNode, Nothing}, node_info::NamedTuple)
+function create_node(Node, node_id::Int, parent::Union{AbstractNode,Nothing}, node_info::NamedTuple)
     lb = -Inf
     depth = 1
     if !isnothing(parent)
         lb = parent.lb
         depth = parent.depth + 1
     end
-    bnb_node = structfromnt(BnBNodeInfo, (id = node_id, lb = lb, ub = Inf, depth = depth))
-    bnb_nt = (std = bnb_node,)
+    bnb_node = structfromnt(BnBNodeInfo, (id=node_id, lb=lb, ub=Inf, depth=depth))
+    bnb_nt = (std=bnb_node,)
     node_nt = merge(bnb_nt, node_info)
     return structfromnt(Node, node_nt)
 end
@@ -610,12 +617,7 @@ function evaluate_node! end
     Access standard AbstractNode internals without using .std syntax
 =#
 @inline function Base.getproperty(c::AbstractNode, s::Symbol)
-    if s in (
-        :id,
-        :lb,
-        :ub,
-        :depth
-    )
+    if s in (:id, :lb, :ub, :depth)
         Core.getproperty(Core.getproperty(c, :std), s)
     else
         getfield(c, s)
@@ -623,12 +625,7 @@ function evaluate_node! end
 end
 
 @inline function Base.setproperty!(c::AbstractNode, s::Symbol, v)
-    if s in (
-        :id,
-        :lb,
-        :ub,
-        :depth
-    )
+    if s in (:id, :lb, :ub, :depth)
         Core.setproperty!(c.std, s, v)
     else
         Core.setproperty!(c, s, v)
@@ -656,5 +653,5 @@ Return the distance of feasibility for the given value.
 - if `value::Number` this returns the distance to the nearest discrete value
 """
 function get_distance_to_feasible(tree::BnBTree, value::Number)
-    return abs(round(value)-value)
+    return abs(round(value) - value)
 end

@@ -22,7 +22,6 @@ using Boscia
 using Random
 using SparseArrays
 using FrankWolfe
-using Bonobo
 using CSV
 using StableRNGs
 using CombinatorialLinearOracles
