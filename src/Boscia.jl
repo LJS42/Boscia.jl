@@ -19,6 +19,8 @@ using Printf
 using Dates
 using MathOptInterface
 using SparseArrays
+using DataStructures
+using NamedTupleTools
 import Statistics: mean
 const MOI = MathOptInterface
 const MOIU = MOI.Utilities

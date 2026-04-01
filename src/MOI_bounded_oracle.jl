@@ -658,7 +658,7 @@ function check_infeasible_vertex(lmo::FrankWolfe.MathOptLMO, tree)
 end
 
 """
-    Bonobo.get_branching_variable(tree::Bonobo.BnBTree, branching::PartialStrongBranching{MathOptBLMO{OT}}, node::Bonobo.AbstractNode,) where {OT<:MOI.AbstractOptimizer}
+    get_branching_variable(tree::Bonobo.BnBTree, branching::PartialStrongBranching{MathOptBLMO{OT}}, node::Bonobo.AbstractNode,) where {OT<:MOI.AbstractOptimizer}
 
 Behavior for strong branching. 
 Note that in constrast to the `ManagedBLMO` type, we filter out the integer and binary constraints as solving general MIP in strong branching would be very expensive.

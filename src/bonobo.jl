@@ -1,5 +1,9 @@
-using DataStructures
-using NamedTupleTools
+# =============================================================================
+# Part of this file is copied/adapted from Bonobo.jl (MIT License)
+# Original repository: https://wikunia.github.io/Bonobo.jl
+# License: MIT License
+# =============================================================================
+
 """
     AbstractNode
 
@@ -216,83 +220,6 @@ Return a vector of variables to branch on from the current root object.
 function get_branching_indices end
 
 """
-    optimize!(tree::BnBTree; callback=(args...; kwargs...)->())
-
-Optimize the problem using a branch and bound approach. 
-
-The steps, repeated until terminated is true, are the following:
-```julia
-# 1. get the next open node depending on the traverse strategy
-node = get_next_node(tree, tree.options.traverse_strategy)
-# 2. evaluate the current node and return the lower and upper bound
-# if the problem is infeasible both values should be set to NaN
-lb, ub = evaluate_node!(tree, node)
-# 3. update the upper and lower bound of the node struct
-set_node_bound!(tree.sense, node, lb, ub)
-
-# 4. update the best solution
-updated = update_best_solution!(tree, node)
-updated && bound!(tree, node.id)
-
-# 5. remove the current node
-close_node!(tree, node)
-# 6. compute the node children and adds them to the tree
-# internally calls get_branching_variable and branch_on_variable!
-branch!(tree, node)
-```
-
-A `callback` function can be provided which will be called whenever a node is closed.
-It always has the arguments `tree` and `node` and is called after the `node` is closed. 
-Additionally the callback function **must** accept additional keyword arguments (`kwargs`) 
-which are set in the following ways:
-1. If the node is infeasible the kwarg `node_infeasible` is set to `true`.
-2. If the node has a higher lower bound than the incumbent the kwarg `worse_than_incumbent` is set to `true`.
-"""
-function optimize!(tree::BnBTree; callback=(args...; kwargs...) -> ())
-    while !terminated(tree)
-        node = get_next_node(tree, tree.options.traverse_strategy)
-        lb, ub = evaluate_node!(tree, node)
-        # if the problem was infeasible we simply close the node and continue
-        if isnan(lb) && isnan(ub)
-            close_node!(tree, node)
-            callback(tree, node; node_infeasible=true)
-            continue
-        end
-
-        set_node_bound!(tree.sense, node, lb, ub)
-
-        # if the evaluated lower bound is worse than the best incumbent -> close and continue
-        if node.lb >= tree.incumbent
-            close_node!(tree, node)
-            callback(tree, node; worse_than_incumbent=true)
-            continue
-        end
-
-        tree.node_queue[node.id] = (node.lb, node.id)
-        _, prio = first(tree.node_queue)
-        if tree.lb > prio[1] + 1e-6
-            @show tree.lb
-            @show prio[1]
-        end
-        @assert tree.lb <= prio[1] + 1e-6
-        tree.lb = prio[1]
-
-        updated = update_best_solution!(tree, node)
-        if updated
-            bound!(tree, node.id)
-            if isapprox(tree.incumbent, tree.lb; atol=tree.options.atol, rtol=tree.options.rtol)
-                break
-            end
-        end
-
-        close_node!(tree, node)
-        branch!(tree, node)
-        callback(tree, node)
-    end
-    return sort_solutions!(tree.solutions)
-end
-
-"""
     sort_solutions!(solutions::Vector{<:AbstractSolution})
 
 Sort the solutions vector by objective value such that the best solution is at index 1.
@@ -366,40 +293,6 @@ function close_node!(tree::BnBTree, node::AbstractNode)
 end
 
 """
-    update_best_solution!(tree::BnBTree, node::AbstractNode)
-
-Update the best solution when we found a better incumbent.
-Calls [`add_new_solution!`] if this is the case, returns whether a solution was added.
-"""
-function update_best_solution!(tree::BnBTree, node::AbstractNode)
-    isinf(node.ub) && return false
-    node.ub >= tree.incumbent && return false
-
-    tree.incumbent = node.ub
-
-    add_new_solution!(tree, node)
-    return true
-end
-
-"""
-    add_new_solution!(tree::BnBTree{N,R,V,S}, node::AbstractNode) where {N,R,V,S<:DefaultSolution{N,V}}
-
-Currently it changes the general solution itself by calling [`get_relaxed_values`](@ref) which needs to be implemented by you.
-
-This function needs to be implemented by you if you have a different type of Solution object than [`DefaultSolution`](@ref).
-"""
-function add_new_solution!(
-    tree::BnBTree{N,R,V,S},
-    node::AbstractNode,
-) where {N,R,V,S<:DefaultSolution{N,V}}
-    sol = DefaultSolution(node.ub, get_relaxed_values(tree, node), node)
-    push!(tree.solutions, sol)
-    if tree.incumbent_solution === nothing || sol.objective < tree.incumbent_solution.objective
-        tree.incumbent_solution = sol
-    end
-end
-
-"""
     get_relaxed_values(tree::BnBTree, node::AbstractNode)
 
 Get the values of the current node. This is always called only after [`evaluate_node!`](@ref) is called.
@@ -407,16 +300,6 @@ It is used to store a `Solution` object.
 Return the type of `Value` given to the [`initialize`](@ref) method.
 """
 function get_relaxed_values end
-
-"""
-    get_solution(tree::BnBTree; result=1)
-
-Return the solution values of the problem. 
-See [`get_objective_value`](@ref) to obtain the objective value instead.
-"""
-function get_solution(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:DefaultSolution{N,V}}
-    return tree.solutions[result].solution
-end
 
 """
     get_objective_value(tree::BnBTree; result=1)
