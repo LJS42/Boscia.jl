@@ -321,11 +321,6 @@ Return the number of solutions available.
 """
 get_num_solutions(tree::BnBTree) = length(tree.solutions)
 
-export BnBTree, BnBNodeInfo, AbstractNode, AbstractSolution
-
-export AbstractTraverseStrategy, AbstractBranchStrategy
-
-
 """
     branch!(tree, node)
 
@@ -540,5 +535,6 @@ function get_distance_to_feasible(tree::BnBTree, value::Number)
 end
 
 export BnBTree, BnBNodeInfo, AbstractNode, AbstractSolution
-
 export AbstractTraverseStrategy, AbstractBranchStrategy
+export BestFirstSearch, DepthFirstSearch          
+export FIRST, MOST_INFEASIBLE   
