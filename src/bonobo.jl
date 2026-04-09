@@ -538,3 +538,7 @@ Return the distance of feasibility for the given value.
 function get_distance_to_feasible(tree::BnBTree, value::Number)
     return abs(round(value) - value)
 end
+
+export BnBTree, BnBNodeInfo, AbstractNode, AbstractSolution
+
+export AbstractTraverseStrategy, AbstractBranchStrategy
