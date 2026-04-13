@@ -293,15 +293,6 @@ function close_node!(tree::BnBTree, node::AbstractNode)
 end
 
 """
-    get_relaxed_values(tree::BnBTree, node::AbstractNode)
-
-Get the values of the current node. This is always called only after [`evaluate_node!`](@ref) is called.
-It is used to store a `Solution` object.
-Return the type of `Value` given to the [`initialize`](@ref) method.
-"""
-function get_relaxed_values end
-
-"""
     get_objective_value(tree::BnBTree; result=1)
 
 Return the objective value
@@ -536,5 +527,5 @@ end
 
 export BnBTree, BnBNodeInfo, AbstractNode, AbstractSolution
 export AbstractTraverseStrategy, AbstractBranchStrategy
-export BestFirstSearch, DepthFirstSearch          
-export FIRST, MOST_INFEASIBLE   
+export BestFirstSearch, DepthFirstSearch
+export FIRST, MOST_INFEASIBLE
