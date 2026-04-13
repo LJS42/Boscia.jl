@@ -229,28 +229,6 @@ function sort_solutions!(solutions::Vector{<:AbstractSolution})
 end
 
 """
-    terminated(tree::BnBTree)
-
-Return true when the branch-and-bound loop in [`optimize!`](@ref) should be terminated.
-Default behavior is to terminate the loop only when no nodes exist in the priority queue
-or when the relative or absolute duality gap are below the tolerances fixed in the options.
-"""
-function terminated(tree::BnBTree)
-    absgap = tree.incumbent - tree.lb
-    if absgap ≤ tree.options.abs_gap_limit
-        return true
-    end
-    dual_gap = if signbit(tree.incumbent) != signbit(tree.lb)
-        Inf
-    elseif tree.incumbent == tree.lb
-        0.0
-    else
-        absgap / min(abs(tree.incumbent), abs(tree.lb))
-    end
-    return isempty(tree.nodes) || dual_gap ≤ tree.options.dual_gap_limit
-end
-
-"""
     set_node_bound!(objective_sense::Symbol, node::AbstractNode, lb, ub)
 
 Set the bounds of the `node` object to the lower and upper bound given. 
@@ -293,26 +271,6 @@ function close_node!(tree::BnBTree, node::AbstractNode)
 end
 
 """
-    get_objective_value(tree::BnBTree; result=1)
-
-Return the objective value
-"""
-function get_objective_value(tree::BnBTree{N,R,V,S}; result=1) where {N,R,V,S<:DefaultSolution{N,V}}
-    if tree.sense == :Max
-        return -tree.solutions[result].objective
-    else
-        return tree.solutions[result].objective
-    end
-end
-
-"""
-    get_num_solutions(tree::BnBTree)
-
-Return the number of solutions available.
-"""
-get_num_solutions(tree::BnBTree) = length(tree.solutions)
-
-"""
     branch!(tree, node)
 
 Get the branching variable with [`get_branching_variable`](@ref) and then calls [`get_branching_nodes_info`](@ref) and [`add_node!`](@ref).
@@ -325,24 +283,6 @@ function branch!(tree, node)
     for node_info in nodes_info
         add_node!(tree, node, node_info)
     end
-end
-
-"""
-    get_branching_variable(tree::BnBTree, ::FIRST, node::AbstractNode)
-
-Return the first possible branching variable which is a branching variable based on `tree.branching_indices`
-and is currently not valid based on [`is_approx_feasible`](@ref).
-Return `-1` if all integer constraints are respected.
-"""
-function get_branching_variable(tree::BnBTree, ::FIRST, node::AbstractNode)
-    values = get_relaxed_values(tree, node)
-    for i in tree.branching_indices
-        value = values[i]
-        if !is_approx_feasible(tree, value)
-            return i
-        end
-    end
-    return -1
 end
 
 """
