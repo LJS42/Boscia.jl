@@ -130,8 +130,6 @@ mutable struct BnBTree{Node<:AbstractNode,Root,Value,Solution<:AbstractSolution{
     options::Options
 end
 
-Base.broadcastable(x::BnBTree) = Ref(x)
-
 mutable struct FrankWolfeSolution{Node<:AbstractNode,Value,T<:Real} <: AbstractSolution{Node,Value}
     objective::T
     solution::Value
