@@ -41,6 +41,17 @@ mutable struct BnBNodeInfo
 end
 
 """
+    AbstractTraverseStrategy
+
+The abstract type for a traverse strategy. 
+If you implement a new traverse strategy this must be the supertype. 
+
+If you want to implement your own strategy the [`get_next_node`](@ref) function needs a new method 
+which dispatches on the `traverse_strategy` argument. 
+"""
+abstract type AbstractTraverseStrategy end
+
+"""
     AbstractBranchStrategy
 
 The abstract type for a branching strategy. 
