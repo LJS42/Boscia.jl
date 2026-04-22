@@ -27,14 +27,13 @@ const MOIU = MOI.Utilities
 import MathOptSetDistances as MOD
 
 include("integer_bounds.jl")
-include("bonobo.jl")
 include("blmo_interface.jl")
 include("time_tracking_lmo.jl")
 include("frank_wolfe_variants.jl")
 include("build_lmo.jl")
 include("tightenings.jl")
 include("node.jl")
-include("custom_bonobo.jl")
+include("bonobo.jl")
 include("callbacks.jl")
 include("defs.jl")
 include("problem.jl")
